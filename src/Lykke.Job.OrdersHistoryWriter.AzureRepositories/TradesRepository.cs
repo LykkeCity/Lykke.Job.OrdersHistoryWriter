@@ -10,12 +10,18 @@ namespace Lykke.Job.OrdersHistoryWriter.AzureRepositories
     {
         private readonly BatchSaver<TradeEntity> _batchSaver;
 
-        public TradesRepository(ILogFactory logFactory, string connectionString)
+        public TradesRepository(
+            ILogFactory logFactory,
+            string connectionString,
+            int warningPartitionsCount,
+            int warningPartitionQueueCount)
         {
             _batchSaver = new BatchSaver<TradeEntity>(
+                logFactory,
                 connectionString,
                 "Trades",
-                logFactory);
+                warningPartitionsCount,
+                warningPartitionQueueCount);
         }
 
         public void Start()

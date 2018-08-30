@@ -18,6 +18,8 @@ OrdersHistoryWriterJob:
             types:
                 - RabbitMq
         ExchangeName: spot.matching.engine.out.events
+    WarningPartitionsCount: 3000
+    WarningPartitionQueueCount: 10000
 SlackNotifications:
     AzureQueue:
         ConnectionString:

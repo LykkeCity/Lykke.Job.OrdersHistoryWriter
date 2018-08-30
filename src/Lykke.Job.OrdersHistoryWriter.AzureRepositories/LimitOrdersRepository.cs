@@ -13,13 +13,17 @@ namespace Lykke.Job.OrdersHistoryWriter.AzureRepositories
         public LimitOrdersRepository(
             ILogFactory logFactory,
             ITradesRepository tradesRepository,
-            string connectionString)
+            string connectionString,
+            int warningPartitionsCount,
+            int warningPartitionQueueCount)
         {
             _tradesRepository = tradesRepository;
             _batchSaver = new BatchSaver<LimitOrderEntity>(
+                logFactory,
                 connectionString,
                 "LimitOrders",
-                logFactory);
+                warningPartitionsCount,
+                warningPartitionQueueCount);
         }
 
         public void Start()

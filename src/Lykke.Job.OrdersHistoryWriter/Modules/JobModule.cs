@@ -35,17 +35,23 @@ namespace Lykke.Job.OrdersHistoryWriter.Modules
             builder.RegisterType<TradesRepository>()
                 .As<ITradesRepository>()
                 .SingleInstance()
-                .WithParameter(TypedParameter.From(_settings.Db.TradesConnString));
+                .WithParameter(TypedParameter.From(_settings.Db.TradesConnString))
+                .WithParameter("warningPartitionsCount", _settings.WarningPartitionsCount)
+                .WithParameter("warningPartitionQueueCount", _settings.WarningPartitionQueueCount);
 
             builder.RegisterType<MarketOrdersRepository>()
                 .As<IMarketOrdersRepository>()
                 .SingleInstance()
-                .WithParameter(TypedParameter.From(_settings.Db.OrdersConnString));
+                .WithParameter(TypedParameter.From(_settings.Db.OrdersConnString))
+                .WithParameter("warningPartitionsCount", _settings.WarningPartitionsCount)
+                .WithParameter("warningPartitionQueueCount", _settings.WarningPartitionQueueCount);
 
             builder.RegisterType<LimitOrdersRepository>()
                 .As<ILimitOrdersRepository>()
                 .SingleInstance()
-                .WithParameter(TypedParameter.From(_settings.Db.OrdersConnString));
+                .WithParameter(TypedParameter.From(_settings.Db.OrdersConnString))
+                .WithParameter("warningPartitionsCount", _settings.WarningPartitionsCount)
+                .WithParameter("warningPartitionQueueCount", _settings.WarningPartitionQueueCount);
 
             builder.RegisterType<RabbitSubscriber>()
                 .As<IStartStop>()

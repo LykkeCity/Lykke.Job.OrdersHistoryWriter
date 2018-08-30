@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Common;
@@ -16,25 +17,29 @@ namespace Lykke.Job.OrdersHistoryWriter.AzureRepositories
     {
         private const int _tableServiceBatchMaximumOperations = 100;
         private const int _maxNumberOfTasks = 50;
-        private const int _warningPartitionsCount = 1000;
-        private const int _warningPartitionQueueCount = 1000;
 
         private readonly CloudTable _table;
         private readonly ILog _log;
         private readonly SemaphoreSlim _lock = new SemaphoreSlim(1, 1);
+        private readonly int _warningPartitionsCount;
+        private readonly int _warningPartitionQueueCount;
 
-        private Dictionary<string, List<T>> _bufferDict = new Dictionary<string, List<T>>();
+        private Dictionary<string, Dictionary<string, T>> _bufferDict = new Dictionary<string, Dictionary<string, T>>();
 
         public BatchSaver(
+            ILogFactory logFactory,
             string connectionString,
             string tableName,
-            ILogFactory logFactory)
+            int warningPartitionsCount,
+            int warningPartitionQueueCount)
             : base(TimeSpan.FromMilliseconds(50), logFactory)
         {
             var cloudAccount = CloudStorageAccount.Parse(connectionString);
             var tableClient = cloudAccount.CreateCloudTableClient();
             _table = tableClient.GetTableReference(tableName);
             _log = logFactory.CreateLog(this);
+            _warningPartitionsCount = warningPartitionsCount > 0 ? warningPartitionsCount : 3000;
+            _warningPartitionQueueCount = warningPartitionQueueCount > 0 ? warningPartitionQueueCount : 10000;
         }
 
         public async Task AddAsync(params T[] items)
@@ -47,13 +52,13 @@ namespace Lykke.Job.OrdersHistoryWriter.AzureRepositories
                     if (_bufferDict.ContainsKey(item.PartitionKey))
                     {
                         var partitionQueue = _bufferDict[item.PartitionKey];
-                        partitionQueue.Add(item);
+                        partitionQueue[item.RowKey] = item;
                         if (partitionQueue.Count >= _warningPartitionQueueCount)
                             _log.Warning($"Partition {item.PartitionKey} queue has {partitionQueue.Count} items", context: typeof(T).Name);
                     }
                     else
                     {
-                        _bufferDict.Add(item.PartitionKey, new List<T> { item });
+                        _bufferDict.Add(item.PartitionKey, new Dictionary<string, T> {{item.RowKey, item}});
                         if (_bufferDict.Count >= _warningPartitionsCount)
                             _log.Warning($"Buffer has {_bufferDict.Count} partitions", context: typeof(T).Name);
                     }
@@ -74,7 +79,12 @@ namespace Lykke.Job.OrdersHistoryWriter.AzureRepositories
 
         public override async Task Execute()
         {
-            Dictionary<string, List<T>> bufferDict;
+            await PersistBufferAsync();
+        }
+
+        private async Task PersistBufferAsync()
+        {
+            Dictionary<string, Dictionary<string, T>> bufferDict;
             await _lock.WaitAsync();
             try
             {
@@ -82,7 +92,7 @@ namespace Lykke.Job.OrdersHistoryWriter.AzureRepositories
                     return;
 
                 bufferDict = _bufferDict;
-                _bufferDict = new Dictionary<string, List<T>>(bufferDict.Count);
+                _bufferDict = new Dictionary<string, Dictionary<string, T>>(bufferDict.Count);
             }
             finally
             {
@@ -98,7 +108,7 @@ namespace Lykke.Job.OrdersHistoryWriter.AzureRepositories
                 {
                     for (var i = 0; i < partitionItems.Count; i += _tableServiceBatchMaximumOperations)
                     {
-                        var batchItems = partitionItems.GetRange(i, Math.Min(_tableServiceBatchMaximumOperations, partitionItems.Count - i));
+                        var batchItems = partitionItems.Values.Skip(i).Take(Math.Min(_tableServiceBatchMaximumOperations, partitionItems.Count - i));
 
                         var batchOp = new TableBatchOperation();
                         foreach (var item in batchItems)
