@@ -15,7 +15,7 @@ namespace Lykke.Job.OrdersHistoryWriter.AzureRepositories
         where T : TableEntity
     {
         private const int _tableServiceBatchMaximumOperations = 100;
-        private const int _maxNumberOfTasks = 50; //200
+        private const int _maxNumberOfTasks = 50;
         private const int _warningPartitionsCount = 1000;
         private const int _warningPartitionQueueCount = 1000;
 
@@ -49,13 +49,13 @@ namespace Lykke.Job.OrdersHistoryWriter.AzureRepositories
                         var partitionQueue = _bufferDict[item.PartitionKey];
                         partitionQueue.Add(item);
                         if (partitionQueue.Count >= _warningPartitionQueueCount)
-                            _log.Warning($"Partition {item.PartitionKey} queue has {partitionQueue.Count} items");
+                            _log.Warning($"Partition {item.PartitionKey} queue has {partitionQueue.Count} items", context: typeof(T).Name);
                     }
                     else
                     {
                         _bufferDict.Add(item.PartitionKey, new List<T> { item });
                         if (_bufferDict.Count >= _warningPartitionsCount)
-                            _log.Warning($"Buffer has {_bufferDict.Count} partitions");
+                            _log.Warning($"Buffer has {_bufferDict.Count} partitions", context: typeof(T).Name);
                     }
                 }
             }
@@ -90,7 +90,7 @@ namespace Lykke.Job.OrdersHistoryWriter.AzureRepositories
             }
 
             int taskCount = 0;
-            var batchTasks = new List<Task<IList<TableResult>>>();
+            var batchTasks = new List<Task<IList<TableResult>>>(Math.Min(_maxNumberOfTasks, bufferDict.Count));
 
             try
             {
@@ -124,7 +124,7 @@ namespace Lykke.Job.OrdersHistoryWriter.AzureRepositories
             }
             catch (Exception exc)
             {
-                _log.Error(exc);
+                _log.Error(exc, context: typeof(T).Name);
                 throw;
             }
         }
