@@ -74,7 +74,7 @@ namespace Lykke.Job.OrdersHistoryWriter.AzureRepositories
         {
             base.Stop();
 
-            Execute().GetAwaiter().GetResult();
+            PersistBufferAsync().GetAwaiter().GetResult();
         }
 
         public override async Task Execute()
