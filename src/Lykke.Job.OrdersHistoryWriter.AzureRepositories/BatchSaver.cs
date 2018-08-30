@@ -82,7 +82,7 @@ namespace Lykke.Job.OrdersHistoryWriter.AzureRepositories
                     return;
 
                 bufferDict = _bufferDict;
-                _bufferDict = new Dictionary<string, List<T>>();
+                _bufferDict = new Dictionary<string, List<T>>(bufferDict.Count);
             }
             finally
             {
