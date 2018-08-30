@@ -1,0 +1,31 @@
+OrdersHistoryWriterJob:
+    Db:
+        LogsConnString:
+            settings-key: LogsConnString
+            types:
+                - AzureTableStorage
+        OrdersConnString:
+            settings-key: OrdersHistoryWriterJob-OrdersConnString
+            types:
+                - AzureTableStorage
+        TradesConnString:
+            settings-key: OrdersHistoryWriterJob-TradesConnString
+            types:
+                - AzureTableStorage
+    Rabbit:
+        ConnectionString:
+            settings-key: GeneralRabbitMqConnectionString
+            types:
+                - RabbitMq
+        ExchangeName: spot.matching.engine.out.events
+SlackNotifications:
+    AzureQueue:
+        ConnectionString:
+            settings-key: SlackNotificationsConnString
+            types:
+                - AzureTableStorage
+        QueueName:
+            settings-key: SlackQueueName
+MonitoringServiceClient:
+    MonitoringServiceUrl:
+        settings-key: MonitoringServiceUrl
