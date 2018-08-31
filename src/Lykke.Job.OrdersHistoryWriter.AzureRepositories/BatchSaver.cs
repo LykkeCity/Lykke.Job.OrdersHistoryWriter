@@ -16,7 +16,7 @@ namespace Lykke.Job.OrdersHistoryWriter.AzureRepositories
         where T : TableEntity
     {
         private const int _tableServiceBatchMaximumOperations = 100;
-        private const int _maxNumberOfTasks = 50;
+        private const int _maxNumberOfTasks = 100;
 
         private readonly CloudTable _table;
         private readonly ILog _log;
