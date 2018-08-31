@@ -90,7 +90,7 @@ namespace Lykke.Job.OrdersHistoryWriter
                             // Optional: default is LogLevel.Information
                             options.MinLogLevel = LogLevel.Warning;
                             // Optional: by default is enabled
-                            options.SpamGuard.DisableGuarding();
+                            options.SpamGuard.SetMutePeriod(LogLevel.Warning, TimeSpan.FromSeconds(30));
                         });
                     });
 
