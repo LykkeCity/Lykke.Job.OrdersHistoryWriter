@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Lykke.MatchingEngine.Connector.Models.Events;
 using Microsoft.WindowsAzure.Storage.Table;
 
@@ -17,6 +18,8 @@ namespace Lykke.Job.OrdersHistoryWriter.AzureRepositories
         public double Volume { get; set; }
         public string ClientId { get; set; }
         public bool? IsLimitOrderResult { get; set; }
+        public double FeeSize { get; set; }
+        public string FeeTypeText { get; set; }
 
         public static string GenerateRowKey(string tradeId)
         {
@@ -112,6 +115,9 @@ namespace Lykke.Job.OrdersHistoryWriter.AzureRepositories
                 Volume = double.Parse(trade.BaseVolume),
                 Price = double.Parse(trade.Price),
             };
+            var fee = trade.Fees?.FirstOrDefault(f => f.AssetId == trade.BaseAssetId);
+            if (fee != null)
+                result.FeeSize = double.Parse(fee.Volume);
 
             if (isLimitOrder)
             {
